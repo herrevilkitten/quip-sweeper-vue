@@ -65,12 +65,8 @@ export default {
       }
     },
     clickCell: function(row, col) {
-      console.log("Click on", row, col);
-
       const index = (row - 1) * this.width + (col - 1);
       const cell = this.board[index];
-      console.log("board", index, cell);
-
       this.$emit("click", { index: index, row: row - 1, col: col - 1 });
     }
   },

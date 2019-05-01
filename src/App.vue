@@ -172,14 +172,12 @@ export default {
           }
         }
       }
-      console.log(this.board);
       this.state = "playing";
     },
     handleBoardClick: function($event) {
       if (this.state !== "playing") {
         return;
       }
-      console.log($event);
 
       const cell = this.board[$event.index];
       if (cell.endsWith("-")) {
