@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="quip-sweeper">
     <div class="sweeper-header">Game Time: {{timer}}, difficulty: {{difficulty}}</div>
     <quip-sweeper
       :height="height"
@@ -8,10 +8,16 @@
       @click="handleBoardClick"
     >
     </quip-sweeper>
-    <div v-if="state === 'boom'">
+    <div
+      class="sweeper-status"
+      v-if="state === 'boom'"
+    >
       You triggered a mine!
     </div>
-    <div v-if="state === 'won'">
+    <div
+      class="sweeper-status"
+      v-if="state === 'won'"
+    >
       You won!
     </div>
   </div>
@@ -257,8 +263,14 @@ export default {
 
 
 <style scoped lang="less">
-div {
-  margin-bottom: 0.5rem;
+.quip-sweeper {
+  div {
+    margin: 0.5rem 0;
+  }
+
+  .sweeper-status {
+    text-align: center;
+  }
 }
 </style>
 
