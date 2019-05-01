@@ -31,14 +31,17 @@ export default {
       const cell = this.board[index];
 
       switch (cell) {
+        case "*":
+          return "cell-bomb";
         case "X":
         case "?":
           return "cell-unknown";
-        case "0":
-        case 0:
-          return "cell-number";
         default:
-          return "";
+          if (cell.endsWith("-")) {
+            return "cell-number";
+          } else {
+            return "cell-unknown";
+          }
       }
     },
     cellIcon: function(row, col) {
@@ -46,14 +49,19 @@ export default {
       const cell = this.board[index];
 
       switch (cell) {
+        case "*":
+          return "*";
         case "X":
         case "?":
           return "?";
-        case "0":
-        case 0:
+        case "0-":
           return " ";
         default:
-          return cell;
+          if (cell.endsWith("-")) {
+            return cell.replace("-", "");
+          } else {
+            return "?";
+          }
       }
     },
     clickCell: function(row, col) {
@@ -84,17 +92,23 @@ export default {
       width: 2rem;
       height: 2rem;
       font-size: 1.5em;
-      border: 1px solid blue;
+      border: 1px dotted black;
       cursor: pointer;
       text-align: center;
       vertical-align: middle;
+
+      &.cell-bomb {
+        color: white;
+        background-color: red;
+      }
 
       &.cell-unknown {
         color: lightgray;
       }
 
       &.cell-number {
-        color: green;
+        color: black;
+        background-color: lightgreen;
       }
     }
     .quip-sweeper-cell:hover {

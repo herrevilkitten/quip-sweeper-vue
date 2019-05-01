@@ -1,7 +1,7 @@
 <template>
   <div>
+    <div class="sweeper-header">Game Time: {{timer}}, difficulty: {{difficulty}}</div>
     <quip-sweeper
-      v-if="state === 'playing'"
       :height="height"
       :width="width"
       :board="board"
@@ -49,13 +49,14 @@ export default {
       width: 9,
       board: [],
       state: "playing",
-      difficulty: "easy"
+      difficulty: "easy",
+      timer: 0
     };
   },
   created: function() {
     quip.apps.updateToolbar({
       toolbarCommandIds: [quip.apps.DocumentMenuCommands.MENU_MAIN],
-      highlightedCommandIds: [],
+      highlightedCommandIds: ["sweeper-easy"],
       menuCommands: [
         {
           id: quip.apps.DocumentMenuCommands.MENU_MAIN,
@@ -72,6 +73,7 @@ export default {
           label: "Easy",
           handler: () => {
             this.difficulty = "easy";
+            this.updateMenu();
             this.resetBoard();
           }
         },
@@ -80,6 +82,7 @@ export default {
           label: "Medium",
           handler: () => {
             this.difficulty = "medium";
+            this.updateMenu();
             this.resetBoard();
           }
         },
@@ -88,6 +91,7 @@ export default {
           label: "Hard",
           handler: () => {
             this.difficulty = "hard";
+            this.updateMenu();
             this.resetBoard();
           }
         },
@@ -104,88 +108,150 @@ export default {
     this.resetBoard();
   },
   methods: {
+    updateMenu: function() {
+      quip.apps.updateToolbar({
+        highlightedCommandIds: [`sweeper-${this.difficulty}`]
+      });
+    },
     resetBoard: function() {
       this.height = BOARD_CONFIG[this.difficulty].height;
       this.width = BOARD_CONFIG[this.difficulty].width;
       let mineMax = BOARD_CONFIG[this.difficulty].count;
 
-      this.board = new Array(this.height * this.width);
-      this.board.fill("?");
+      this.timer = 0;
+      if (this.interval) {
+        clearInterval(this.interval);
+      }
+      this.interval = setInterval(() => {
+        this.timer++;
+      }, 1000);
 
-      let mineCount = 0;
+      this.board = new Array(this.height * this.width);
+      this.board.fill("0");
+
+      const mines = [];
       while (true) {
-        const index = Math.floor(Math.random() * (this.height * this.width));
+        const row = Math.floor(Math.random() * this.height);
+        const col = Math.floor(Math.random() * this.width);
+        const index = row * this.width + col;
         if (this.board[index] !== "X") {
           this.board[index] = "X";
-          mineCount = mineCount + 1;
-          if (mineCount >= mineMax) {
+          mines.push({
+            row: row,
+            col: col,
+            index: index
+          });
+          if (mines.length >= mineMax) {
             break;
           }
         }
       }
+
+      for (let i = 0; i < mines.length; ++i) {
+        const { row, col, index } = mines[i];
+        let mineCount = 0;
+        for (let i = row - 1; i <= row + 1; ++i) {
+          if (i < 0 || i >= this.height) {
+            continue;
+          }
+
+          for (let j = col - 1; j <= col + 1; ++j) {
+            if (j < 0 || j >= this.width) {
+              continue;
+            }
+
+            if (i == row && j == col) {
+              continue;
+            }
+
+            let cellIndex = i * this.width + j;
+            if (this.board[cellIndex] !== "X") {
+              const mineCount = Number(this.board[cellIndex] || 0);
+              this.board[cellIndex] = String(mineCount + 1);
+            }
+          }
+        }
+      }
+      console.log(this.board);
       this.state = "playing";
     },
     handleBoardClick: function($event) {
+      if (this.state !== "playing") {
+        return;
+      }
       console.log($event);
 
       const cell = this.board[$event.index];
+      if (cell.endsWith("-")) {
+        return;
+      }
 
       switch (cell) {
         case "X":
-          this.state = "boom";
-          console.log("BOOM");
+          this.loseGame();
           break;
-        case "?":
-          let mineCount = 0;
-          for (let i = $event.row - 1; i <= $event.row + 1; ++i) {
-            if (i < 0 || i >= this.height) {
+        default:
+          this.revealCell($event.row, $event.col);
+          this.board = Array.from(this.board);
+          if (!this.board.find(item => item !== "X" && !item.endsWith("-"))) {
+            this.winGame();
+          }
+          break;
+      }
+    },
+    revealCell: function(row, col) {
+      const index = row * this.width + col;
+
+      if (
+        this.board[index] === "X" ||
+        this.board[index] === "*" ||
+        this.board[index].endsWith("-")
+      ) {
+        return;
+      }
+
+      this.board[index] = this.board[index] + "-";
+      if (this.board[index].startsWith("0")) {
+        for (let i = row - 1; i <= row + 1; ++i) {
+          if (i < 0 || i >= this.height) {
+            continue;
+          }
+          for (let j = col - 1; j <= col + 1; ++j) {
+            if (j < 0 || j >= this.width) {
               continue;
             }
-            for (let j = $event.col - 1; j <= $event.col + 1; ++j) {
-              if (j < 0 || j >= this.width) {
-                continue;
-              }
 
-              if (i == $event.row && j == $event.col) {
-                continue;
-              }
-              if (this.board[i * this.height + j] === "X") {
-                mineCount++;
-              }
+            if (i == row && j == col) {
+              continue;
             }
+            this.revealCell(i, j);
           }
-          console.log("Mine Count:", mineCount);
-          this.board = Array.from(this.board);
-          this.board[$event.index] = mineCount;
-          if (mineCount === 0) {
-            for (let i = $event.row - 1; i <= $event.row + 1; ++i) {
-              if (i < 0 || i >= this.height) {
-                continue;
-              }
-              for (let j = $event.col - 1; j <= $event.col + 1; ++j) {
-                if (j < 0 || j >= this.width) {
-                  continue;
-                }
-
-                if (i == $event.row && j == $event.col) {
-                  continue;
-                }
-                console.log("Testing ", i, j);
-                this.handleBoardClick({
-                  row: i,
-                  col: j,
-                  index: i * this.width + j
-                });
-              }
-            }
-          }
-          break;
+        }
       }
-
-      if (!this.board.find(item => item === "?")) {
-        this.state = "won";
-        console.log("YOU WON!");
+    },
+    revealBoard: function() {
+      for (let i = 0; i < this.board.length; ++i) {
+        if (this.board[i] === "X") {
+          this.board[i] = "*";
+        } else if (!this.board[i].endsWith("-")) {
+          this.board[i] = this.board[i] + "-";
+        }
       }
+      this.board = Array.from(this.board);
+    },
+    loseGame: function() {
+      this.state = "boom";
+      this.endGame();
+    },
+    winGame: function() {
+      this.state = "won";
+      this.endGame();
+    },
+    endGame: function() {
+      if (this.interval) {
+        clearInterval(this.interval);
+      }
+      this.revealBoard();
     }
   }
 };
@@ -193,5 +259,8 @@ export default {
 
 
 <style scoped lang="less">
+div {
+  margin-bottom: 0.5rem;
+}
 </style>
 
