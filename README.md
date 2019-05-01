@@ -3,6 +3,10 @@ This is an implementation of Mine Sweeper using [VueJS](https://vuejs.org/).
 
 ![Screenshot](doc/screenshot.png)
 
+You can use the Quip Live App menu to change the difficulty or to restart at the current difficulty.
+
+Your best time for a particular difficulty level is stored in a [Quip User Preference](https://salesforce.quip.com/dev/liveapps/documentation#preferences).
+
 ## Important Information
 
 Check out my [Getting Started Guide](https://github.com/herrevilkitten/quip-getting-started-vue) for detailed information on what changes are made and important caveats.

@@ -10,6 +10,12 @@
     </quip-sweeper>
     <div
       class="sweeper-status"
+      v-if="bestTime > 0"
+    >
+      Your best time on {{difficulty}} level is {{bestTime}} seconds.
+    </div>
+    <div
+      class="sweeper-status"
       v-if="state === 'boom'"
     >
       You triggered a mine!
@@ -56,7 +62,8 @@ export default {
       board: [],
       state: "playing",
       difficulty: "easy",
-      timer: 0
+      timer: 0,
+      bestTime: 0
     };
   },
   created: function() {
@@ -178,6 +185,15 @@ export default {
           }
         }
       }
+
+      const preferences = quip.apps.getUserPreferences();
+      let bestTime = preferences.getForKey(`best-time-${this.difficulty}`) || 0;
+      if (bestTime) {
+        this.bestTime = Number(bestTime);
+      } else {
+        this.bestTime = 0;
+      }
+
       this.state = "playing";
     },
     handleBoardClick: function($event) {
@@ -250,6 +266,13 @@ export default {
     winGame: function() {
       this.state = "won";
       this.endGame();
+      if (this.bestTime == 0 || this.timer < this.bestTime) {
+        this.bestTime = this.timer;
+        const preferences = quip.apps.getUserPreferences();
+        const values = {};
+        values[`best-time-${this.difficulty}`] = String(this.timer);
+        preferences.save(values);
+      }
     },
     endGame: function() {
       if (this.interval) {
