@@ -187,9 +187,14 @@ export default {
       }
 
       const preferences = quip.apps.getUserPreferences();
-      let bestTime = preferences.getForKey(`best-time-${this.difficulty}`) || 0;
-      if (bestTime) {
-        this.bestTime = Number(bestTime);
+      if (preferences) {
+        let bestTime =
+          preferences.getForKey(`best-time-${this.difficulty}`) || 0;
+        if (bestTime) {
+          this.bestTime = Number(bestTime);
+        } else {
+          this.bestTime = 0;
+        }
       } else {
         this.bestTime = 0;
       }
@@ -269,9 +274,11 @@ export default {
       if (this.bestTime == 0 || this.timer < this.bestTime) {
         this.bestTime = this.timer;
         const preferences = quip.apps.getUserPreferences();
-        const values = {};
-        values[`best-time-${this.difficulty}`] = String(this.timer);
-        preferences.save(values);
+        if (preferences) {
+          const values = {};
+          values[`best-time-${this.difficulty}`] = String(this.timer);
+          preferences.save(values);
+        }
       }
     },
     endGame: function() {
